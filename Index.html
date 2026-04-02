@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Expense Sheet</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+  background: #f5f7fb;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 10px;
+}
+
+.table thead {
+  background: #4f46e5;
+  color: white;
+}
+
+input.table-input, select.table-input {
+  border: none;
+  width: 100%;
+  background: transparent;
+}
+
+input.table-input:focus, select.table-input:focus {
+  outline: none;
+  background: #eef2ff;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.summary div {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid lightgrey;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container py-4">
+
+  <h3 class="text-center mb-3">📊 Expense Sheet</h3>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div>Opening<br><strong id="opening">0</strong></div>
+    <div>Income<br><strong id="income">0</strong></div>
+    <div>Expense<br><strong id="expense">0</strong></div>
+    <div>Closing<br><strong id="closing">0</strong></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="d-flex gap-2 mb-3">
+    <select id="filter" class="form-select w-25" onchange="render()">
+      <option value="all">All</option>
+      <option value="income">Income</option>
+      <option value="expense">Expense</option>
+    </select>
+
+    <button class="btn w-50 btn-primary border" onclick="addRow()">➕ Add</button>
+  </div>
+
+  <!-- Opening Balance -->
+  <div class="mb-3">
+    <label>Opening Balance</label>
+    <input type="number" id="openingBalance" class="form-control">
+  </div>
+
+  <!-- Table -->
+  <table class="table table-bordered table-sm">
+    <thead>
+      <tr>
+        <th style="width:85px">Type</th>
+        <th>Description</th>
+        <th style="width:88px">Amount</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+</div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("excelData")) || [];
+let openingBalance = Number(localStorage.getItem("openingBalance")) || 0;
+
+document.getElementById("openingBalance").value = openingBalance;
+
+function save(){
+  localStorage.setItem("excelData", JSON.stringify(data));
+  localStorage.setItem("openingBalance", openingBalance);
+}
+
+/* SUMMARY */
+function updateSummary(){
+  let income = 0;
+  let expense = 0;
+
+  data.forEach(r=>{
+    if(r.type === "income") income += r.amount;
+    else expense += r.amount;
+  });
+
+  document.getElementById("opening").innerText = openingBalance;
+  document.getElementById("income").innerText = income;
+  document.getElementById("expense").innerText = expense;
+  document.getElementById("closing").innerText =
+    openingBalance + income - expense;
+}
+
+/* RENDER */
+function render(){
+
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
+
+  const filter = document.getElementById("filter").value;
+
+  data.forEach((row, i)=>{
+
+    if(filter !== "all" && row.type !== filter) return;
+
+    body.innerHTML += `
+      <tr>
+        <td>
+          <select class="table-input" onchange="update(${i},'type',this.value)">
+            <option value="income" ${row.type==='income'?'selected':''}>Income</option>
+            <option value="expense" ${row.type==='expense'?'selected':''}>Expense</option>
+          </select>
+        </td>
+
+        <td>
+          <input class="table-input" value="${row.desc || ''}"
+          onchange="update(${i},'desc',this.value)">
+        </td>
+
+        <td>
+          <input type="number" class="table-input" value="${row.amount}"
+          onchange="update(${i},'amount',this.value)">
+        </td>
+
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="del(${i})">X</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  updateSummary();
+}
+
+/* UPDATE */
+function update(i,key,val){
+  data[i][key] = key === "amount" ? Number(val || 0) : val;
+  save();
+  render();
+}
+
+/* ADD */
+function addRow(){
+  data.push({desc:"", type:"income", amount:0});
+  save();
+  render();
+}
+
+/* DELETE */
+function del(i){
+  data.splice(i,1);
+  save();
+  render();
+}
+
+/* OPENING BALANCE */
+document.getElementById("openingBalance").addEventListener("input", e=>{
+  openingBalance = Number(e.target.value || 0);
+  save();
+  render();
+});
+
+/* INIT */
+render();
+updateSummary();
+
+</script>
+
+</body>
+</html>
