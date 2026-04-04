@@ -442,7 +442,8 @@
         render();
       });
       
-        const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
+      /* Export Function */
+      const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
       function exportMenu() {
         exportModal.show();
       }
@@ -467,6 +468,7 @@
         URL.revokeObjectURL(url);
       }
 
+    /* Import Function */
     function importData(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -499,6 +501,7 @@
       reader.readAsText(file);
       }
 
+      /* PDF Export Function */
       function exportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -512,32 +515,103 @@
 
         const closing = openingBalance + income - expense;
 
-        // Title
+        // ===== Date Formatting =====
+        const now = new Date();
+
+        const formattedDate = now.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "2-digit"
+        }).replace(/ /g, "-"); // dd-MMM-yy
+
+        const fullDateTime = now.toLocaleString();
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // ===== HEADER =====
+
+        // Title (Center)
         doc.setFontSize(16);
-        doc.text("Day Book Report", 14, 15);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Day Book Report", pageWidth / 2, 15, { align: "center" });
 
-        // Summary Cards
-        doc.setFontSize(11);
-        doc.text(`Opening: Rs ${openingBalance}`, 16, 25);
-        doc.text(`Income: Rs ${income}`, 16, 32);
-        doc.text(`Expense: Rs ${expense}`, 16, 39);
-        doc.text(`Closing: Rs ${closing}`, 16, 46);
+        // Date (Top Right)
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(formattedDate, pageWidth - 14, 15, { align: "right" });
 
-        // Table
+        // Divider
+        doc.setDrawColor(180);
+        doc.line(14, 20, pageWidth - 14, 20);
+
+        // ===== SUMMARY CARDS =====
+        const cardY = 25;
+        const cardWidth = 40;
+        const cardHeight = 18;
+        const gap = 5;
+
+        const cards = [
+          { label: "Opening", value: openingBalance, color: [52, 152, 219] },
+          { label: "Income", value: income, color: [46, 204, 113] },
+          { label: "Expense", value: expense, color: [231, 76, 60] },
+          { label: "Closing", value: closing, color: [155, 89, 182] }
+        ];
+
+        cards.forEach((card, i) => {
+          const x = 14 + i * (cardWidth + gap);
+
+          doc.setFillColor(...card.color);
+          doc.roundedRect(x, cardY, cardWidth, cardHeight, 3, 3, "F");
+
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(12);
+          doc.text(card.label, x + 3, cardY + 6);
+
+          doc.setFontSize(11);
+          doc.text(`Rs ${card.value}`, x + 3, cardY + 13);
+        });
+
+        // Reset text color
+        doc.setTextColor(0, 0, 0);
+
+        // ===== TABLE =====
         const rows = data.map(item => [
           item.type.toUpperCase(),
           item.desc,
-          ` Rs ${item.amount}`
+          `Rs ${item.amount}`
         ]);
+
         doc.autoTable({
           head: [["Type", "Description", "Amount"]],
           body: rows,
-          startY: 55
+          startY: cardY + cardHeight + 10,
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [52, 73, 94] },
+          columnStyles: {
+            2: { halign: "right" } // Amount right aligned
+          }
         });
 
-        doc.save("daybook_report.pdf");
-      }
+        // ===== FOOTER =====
+        const pageCount = doc.getNumberOfPages();
 
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+
+          // Left: Generated DateTime
+          doc.text(`Generated: ${fullDateTime}`, 14, 290);
+
+          // Right: Page Number
+          doc.text(`Page ${i} of ${pageCount}`, pageWidth - 14, 290, { align: "right" });
+        }
+
+        // ===== SAVE =====
+        doc.save(`daybook_report_${formattedDate}.pdf`);
+      }
+      
       /* Init */
       render();
     </script>
