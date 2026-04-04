@@ -299,11 +299,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
     
-      document.addEventListener("DOMContentLoaded", function() {
-          var infoModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
-          infoModal.show();
+      window.addEventListener("load", () => {
+        const hasSeen = localStorage.getItem("welcomeShown");
+        if (!hasSeen) {
+          const modal = new bootstrap.Modal(document.getElementById("welcomeModal"));
+          modal.show();
+          localStorage.removeItem("welcomeShown");
+        }
       });
-    
     
       let data = JSON.parse(localStorage.getItem("excelData")) || [];
       let openingBalance = Number(localStorage.getItem("openingBalance")) || 0;
