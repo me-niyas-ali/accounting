@@ -300,11 +300,13 @@
     <script>
     
       window.addEventListener("load", () => {
-        const hasSeen = localStorage.getItem("welcomeShown");
-        if (!hasSeen) {
+        const today = new Date().toLocaleDateString("en-CA"); 
+        // format: YYYY-MM-DD (perfect for comparison)
+        const lastShown = localStorage.getItem("welcomeLastShown");
+        if (lastShown !== today) {
           const modal = new bootstrap.Modal(document.getElementById("welcomeModal"));
           modal.show();
-          localStorage.removeItem("welcomeShown");
+          localStorage.setItem("welcomeLastShown", today);
         }
       });
     
