@@ -295,6 +295,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
+    
+       document.addEventListener("DOMContentLoaded", function() {
+           var myModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+           myModal.show();
+       });
+
       let data = JSON.parse(localStorage.getItem("excelData")) || [];
       let openingBalance = Number(localStorage.getItem("openingBalance")) || 0;
       const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
